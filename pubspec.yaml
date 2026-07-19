@@ -33,8 +33,10 @@ dependencies:
 
   http: ^1.2.1
 
-  # pluto_grid: ^7.1.0
-  pluto_grid: any
+  pluto_grid:
+    git:
+      url: https://github.com/bosskmk/pluto_grid.git
+      ref: master
 
 
 

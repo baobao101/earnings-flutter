@@ -116,10 +116,10 @@ packages:
     dependency: transitive
     description:
       name: intl
-      sha256: "3bc132a9dbce73a7e4a21a17d06e1878839ffbf975568bc875c60537824b0c4d"
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.1"
+    version: "0.20.3"
   leak_tracker:
     dependency: transitive
     description:
@@ -227,19 +227,20 @@ packages:
   pluto_grid:
     dependency: "direct main"
     description:
-      name: pluto_grid
-      sha256: ca86e925b42618814a7440b7ddf3e9ff4454eeaeda4bf0046444bb0e6b34dffd
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
+      path: "."
+      ref: master
+      resolved-ref: "96e6c99e2704a205cf3efd840dd367cf17123f46"
+      url: "https://github.com/bosskmk/pluto_grid.git"
+    source: git
+    version: "8.1.0"
   rxdart:
     dependency: transitive
     description:
       name: rxdart
-      sha256: "0c7c0cedd93788d996e33041ffecda924cc54389199cde4e6a34b440f50044cb"
+      sha256: "5c3004a4a8dbb94bd4bf5412a4def4acdaa12e12f269737a5751369e12d1a962"
       url: "https://pub.dev"
     source: hosted
-    version: "0.27.7"
+    version: "0.28.0"
   shared_preferences:
     dependency: "direct main"
     description:
