@@ -33,7 +33,9 @@ dependencies:
 
   http: ^1.2.1
 
-  pluto_grid: 6.0.0
+  # pluto_grid: ^7.1.0
+  pluto_grid: any
+
 
 
 
