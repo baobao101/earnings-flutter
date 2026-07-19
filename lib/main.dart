@@ -90,12 +90,15 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
+  String searchText = "";
+
   List<PlutoRow> cachedPlutoRows = [];
 
   void applyCombinedFilter() {
     stateManager.setFilter((row) {
       final d = DateTime.tryParse(row.cells['date']!.value);
       final score = row.cells['volatility']!.value as double;
+      final ticker = row.cells['ticker']!.value.toString().toLowerCase();
 
       final now = DateTime.now();
       final cutoff = now.add(Duration(days: 4));
@@ -106,7 +109,10 @@ class _EarningsPageState extends State<EarningsPage> {
 
       final passesHighVol = !showHighVolOnly || score >= 60;
 
-      return passesNearTerm && passesHighVol;
+      final passesSearch =
+          searchText.isEmpty || ticker.contains(searchText.toLowerCase());
+
+      return passesNearTerm && passesHighVol && passesSearch;
     });
   }
 
@@ -150,9 +156,9 @@ class _EarningsPageState extends State<EarningsPage> {
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
-
-      frozen: PlutoColumnFrozen.start, // sticky column
+      frozen: PlutoColumnFrozen.start,
     ),
+
     PlutoColumn(
       title: 'Ticker',
       field: 'ticker',
@@ -160,7 +166,27 @@ class _EarningsPageState extends State<EarningsPage> {
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
+
+      renderer: (ctx) {
+        final ticker = ctx.cell.value;
+
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => openTickerSmart(ticker),
+            child: Text(
+              ticker,
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        );
+      },
     ),
+
     PlutoColumn(
       title: 'Volatility',
       field: 'volatility',
@@ -169,6 +195,7 @@ class _EarningsPageState extends State<EarningsPage> {
       enableFilterMenuItem: true,
       enableColumnDrag: true,
     ),
+
     PlutoColumn(
       title: 'Source',
       field: 'source',
@@ -426,32 +453,63 @@ class _EarningsPageState extends State<EarningsPage> {
 
       body: rows.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : PlutoGrid(
-              onLoaded: (event) {
-                stateManager = event.stateManager;
-              },
-
-              columns: plutoColumns,
-              rows: cachedPlutoRows,
-
-              mode: PlutoGridMode.readOnly,
-              configuration: PlutoGridConfiguration(
-                columnSize: PlutoGridColumnSizeConfig(
-                  autoSizeMode:
-                      PlutoAutoSizeMode.scale, // user can resize manually
-                ),
-                style: PlutoGridStyleConfig(
-                  gridBorderColor: Colors.grey.shade300,
-                  gridBackgroundColor: Colors.white,
-                  activatedColor: Colors.blue.shade50,
-                  activatedBorderColor: Colors.blue.shade200,
-                  cellTextStyle: TextStyle(fontSize: 14),
-                  columnTextStyle: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+          : Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: "Search tickers...",
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        searchText = value;
+                        applyCombinedFilter();
+                      });
+                    },
                   ),
                 ),
-              ),
+
+                Expanded(
+                  child: PlutoGrid(
+                    onLoaded: (event) {
+                      stateManager = event.stateManager;
+                    },
+                    columns: plutoColumns,
+                    rows: cachedPlutoRows,
+                    mode: PlutoGridMode.readOnly,
+                    configuration: PlutoGridConfiguration(
+                      enableColumnFilter: true,
+                      columnFilter: PlutoGridColumnFilterConfig(
+                        filters: const [
+                          ...PlutoGridColumnFilterConfig.defaultFilters,
+                        ],
+                        resolveDefaultColumnFilter: (column, resolver) {
+                          return resolver<PlutoFilterTypeContains>()!;
+                        },
+                      ),
+                      columnSize: PlutoGridColumnSizeConfig(
+                        autoSizeMode: PlutoAutoSizeMode.scale,
+                      ),
+                      style: PlutoGridStyleConfig(
+                        gridBorderColor: Colors.grey.shade300,
+                        gridBackgroundColor: Colors.white,
+                        activatedColor: Colors.blue.shade50,
+                        activatedBorderColor: Colors.blue.shade200,
+                        cellTextStyle: TextStyle(fontSize: 14),
+                        columnTextStyle: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
       bottomNavigationBar: Container(
