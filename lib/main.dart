@@ -456,49 +456,41 @@ rows: cachedPlutoRows,
               ),
             ),
 
-      bottomNavigationBar: Container(
-        color: Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-Switch(
-  value: showNearTermOnly,
-  onChanged: (v) {
-    setState(() {
-      showNearTermOnly = v;
-      applyCombinedFilter();
-    });
-  },
-),
-
-
-                ),
-                Text("Near-term only"),
-              ],
-            ),
-            Row(
-              children: [
-Switch(
-  value: showHighVolOnly,
-  onChanged: (v) {
-    setState(() {
-      showHighVolOnly = v;
-      applyCombinedFilter();
-    });
-  },
-),
-
-
-                ),
-                Text("High-vol only"),
-              ],
-            ),
-          ],
-        ),
+bottomNavigationBar: Container(
+  color: Colors.white,
+  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Row(
+        children: [
+          Switch(
+            value: showNearTermOnly,
+            onChanged: (v) {
+              setState(() {
+                showNearTermOnly = v;
+                applyCombinedFilter();
+              });
+            },
+          ),
+          Text("Near-term only"),
+        ],
       ),
-    );
-  }
-}
+      Row(
+        children: [
+          Switch(
+            value: showHighVolOnly,
+            onChanged: (v) {
+              setState(() {
+                showHighVolOnly = v;
+                applyCombinedFilter();
+              });
+            },
+          ),
+          Text("High-vol only"),
+        ],
+      ),
+    ],
+  ),
+),
+
