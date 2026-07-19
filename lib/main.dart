@@ -90,6 +90,42 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
+  List<EarningsRow> filtered = [];
+  void recomputeFilteredRows() {
+    List<EarningsRow> list = rows;
+
+    // Near-term filter
+    if (showNearTermOnly) {
+      final now = DateTime.now();
+      final cutoff = now.add(Duration(days: 10));
+
+      list = list.where((row) {
+        final d = DateTime.tryParse(row.date);
+        return d != null && d.isAfter(today) && d.isBefore(cutoff);
+      }).toList();
+    }
+
+    // High-vol filter
+    if (showHighVolOnly) {
+      list = list.where((row) => row.volatilityScore >= 60).toList();
+    }
+
+    // Sort once
+    list.sort((a, b) {
+      final da = DateTime.tryParse(a.date);
+      final db = DateTime.tryParse(b.date);
+
+      if (da != null && db != null) {
+        final cmp = da.compareTo(db);
+        if (cmp != 0) return cmp;
+      }
+
+      return b.volatilityScore.compareTo(a.volatilityScore);
+    });
+
+    filtered = list;
+  }
+
   List<PlutoColumn> get plutoColumns => [
     PlutoColumn(
       title: 'Date',
@@ -126,16 +162,6 @@ class _EarningsPageState extends State<EarningsPage> {
       enableColumnDrag: true,
     ),
   ];
-  List<PlutoRow> get plutoRows => filteredRows.map((row) {
-    return PlutoRow(
-      cells: {
-        'date': PlutoCell(value: row.date),
-        'ticker': PlutoCell(value: row.ticker),
-        'volatility': PlutoCell(value: row.volatilityScore),
-        'source': PlutoCell(value: row.source),
-      },
-    );
-  }).toList();
 
   FinanceSource? preferredSource;
   List<EarningsRow> rows = [];
@@ -191,6 +217,7 @@ class _EarningsPageState extends State<EarningsPage> {
     // --- Instant load from cache ---
     if (cached != null && !shouldRefresh) {
       rows = parseRows(cached);
+      recomputeFilteredRows();
       setState(() {});
     }
 
@@ -218,6 +245,8 @@ class _EarningsPageState extends State<EarningsPage> {
       );
 
       rows = fresh;
+      recomputeFilteredRows();
+
       setState(() {});
     }
   }
@@ -329,41 +358,6 @@ class _EarningsPageState extends State<EarningsPage> {
   // ------------------------------------------------------------
   // FILTERING + SORTING + GROUPING
   // ------------------------------------------------------------
-  List<EarningsRow> get filteredRows {
-    List<EarningsRow> list = rows;
-
-    // Near-term filter (next 10 days)
-    if (showNearTermOnly) {
-      final today = DateTime.now();
-      final cutoff = today.add(Duration(days: 10));
-
-      list = list.where((row) {
-        final d = DateTime.tryParse(row.date);
-        if (d == null) return false;
-        return d.isAfter(today) && d.isBefore(cutoff);
-      }).toList();
-    }
-
-    // High-vol filter
-    if (showHighVolOnly) {
-      list = list.where((row) => row.volatilityScore >= 60).toList();
-    }
-
-    // Sort by date first, then volatility
-    list.sort((a, b) {
-      final da = DateTime.tryParse(a.date);
-      final db = DateTime.tryParse(b.date);
-
-      if (da != null && db != null) {
-        final cmp = da.compareTo(db);
-        if (cmp != 0) return cmp;
-      }
-
-      return b.volatilityScore.compareTo(a.volatilityScore);
-    });
-
-    return list;
-  }
 
   Map<String, List<EarningsRow>> groupByDate(List<EarningsRow> list) {
     final map = <String, List<EarningsRow>>{};
@@ -418,7 +412,17 @@ class _EarningsPageState extends State<EarningsPage> {
           ? Center(child: CircularProgressIndicator())
           : PlutoGrid(
               columns: plutoColumns,
-              rows: plutoRows,
+              rows: filtered.map((row) {
+                return PlutoRow(
+                  cells: {
+                    'date': PlutoCell(value: row.date),
+                    'ticker': PlutoCell(value: row.ticker),
+                    'volatility': PlutoCell(value: row.volatilityScore),
+                    'source': PlutoCell(value: row.source),
+                  },
+                );
+              }).toList(),
+
               mode: PlutoGridMode.readOnly,
               configuration: PlutoGridConfiguration(
                 columnSize: PlutoGridColumnSizeConfig(
@@ -449,7 +453,12 @@ class _EarningsPageState extends State<EarningsPage> {
               children: [
                 Switch(
                   value: showNearTermOnly,
-                  onChanged: (v) => setState(() => showNearTermOnly = v),
+                  onChanged: (v) {
+                    setState(() {
+                      showNearTermOnly = v;
+                      recomputeFilteredRows();
+                    });
+                  },
                 ),
                 Text("Near-term only"),
               ],
@@ -458,7 +467,12 @@ class _EarningsPageState extends State<EarningsPage> {
               children: [
                 Switch(
                   value: showHighVolOnly,
-                  onChanged: (v) => setState(() => showHighVolOnly = v),
+                  onChanged: (v) {
+                    setState(() {
+                      showHighVolOnly = v;
+                      recomputeFilteredRows();
+                    });
+                  },
                 ),
                 Text("High-vol only"),
               ],
