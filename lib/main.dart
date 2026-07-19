@@ -90,12 +90,15 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
+  final TextEditingController searchController = TextEditingController();
+  String tickerSearch = "";
   List<PlutoRow> cachedPlutoRows = [];
 
   void applyCombinedFilter() {
     stateManager.setFilter((row) {
       final d = DateTime.tryParse(row.cells['date']!.value);
       final score = row.cells['volatility']!.value as double;
+      final ticker = row.cells['ticker']!.value.toString().toLowerCase();
 
       final now = DateTime.now();
       final cutoff = now.add(Duration(days: 4));
@@ -106,7 +109,10 @@ class _EarningsPageState extends State<EarningsPage> {
 
       final passesHighVol = !showHighVolOnly || score >= 60;
 
-      return passesNearTerm && passesHighVol;
+      final passesSearch =
+          tickerSearch.isEmpty || ticker.contains(tickerSearch.toLowerCase());
+
+      return passesNearTerm && passesHighVol && passesSearch;
     });
   }
 
@@ -426,32 +432,64 @@ class _EarningsPageState extends State<EarningsPage> {
 
       body: rows.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : PlutoGrid(
-              onLoaded: (event) {
-                stateManager = event.stateManager;
-              },
-
-              columns: plutoColumns,
-              rows: cachedPlutoRows,
-
-              mode: PlutoGridMode.readOnly,
-              configuration: PlutoGridConfiguration(
-                columnSize: PlutoGridColumnSizeConfig(
-                  autoSizeMode:
-                      PlutoAutoSizeMode.scale, // user can resize manually
-                ),
-                style: PlutoGridStyleConfig(
-                  gridBorderColor: Colors.grey.shade300,
-                  gridBackgroundColor: Colors.white,
-                  activatedColor: Colors.blue.shade50,
-                  activatedBorderColor: Colors.blue.shade200,
-                  cellTextStyle: TextStyle(fontSize: 14),
-                  columnTextStyle: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: "Search ticker...",
+                      prefixIcon: Icon(Icons.search),
+                      suffixIcon: tickerSearch.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear),
+                              onPressed: () {
+                                searchController.clear();
+                                setState(() {
+                                  tickerSearch = "";
+                                  applyCombinedFilter();
+                                });
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        tickerSearch = value;
+                        applyCombinedFilter();
+                      });
+                    },
                   ),
                 ),
-              ),
+                Expanded(
+                  child: PlutoGrid(
+                    onLoaded: (event) {
+                      stateManager = event.stateManager;
+                    },
+                    columns: plutoColumns,
+                    rows: cachedPlutoRows,
+                    mode: PlutoGridMode.readOnly,
+                    configuration: PlutoGridConfiguration(
+                      columnSize: PlutoGridColumnSizeConfig(
+                        autoSizeMode: PlutoAutoSizeMode.scale,
+                      ),
+                      style: PlutoGridStyleConfig(
+                        gridBorderColor: Colors.grey.shade300,
+                        gridBackgroundColor: Colors.white,
+                        activatedColor: Colors.blue.shade50,
+                        activatedBorderColor: Colors.blue.shade200,
+                        cellTextStyle: TextStyle(fontSize: 14),
+                        columnTextStyle: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
 
       bottomNavigationBar: Container(
