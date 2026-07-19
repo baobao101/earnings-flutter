@@ -3,6 +3,7 @@
 // git add .
 // git commit -m "Update frontend"
 // git push
+import 'package:pluto_grid/pluto_grid.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -89,6 +90,56 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
+  List<PlutoColumn> get plutoColumns => [
+    PlutoColumn(
+      title: 'Date',
+      field: 'date',
+      type: PlutoColumnType.text(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
+      enableColumnResize: true,
+      frozen: PlutoColumnFrozen.start, // sticky column
+    ),
+    PlutoColumn(
+      title: 'Ticker',
+      field: 'ticker',
+      type: PlutoColumnType.text(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
+      enableColumnResize: true,
+    ),
+    PlutoColumn(
+      title: 'Volatility',
+      field: 'volatility',
+      type: PlutoColumnType.number(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
+      enableColumnResize: true,
+    ),
+    PlutoColumn(
+      title: 'Source',
+      field: 'source',
+      type: PlutoColumnType.text(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
+      enableColumnResize: true,
+    ),
+  ];
+  List<PlutoRow> get plutoRows => filteredRows.map((row) {
+    return PlutoRow(
+      cells: {
+        'date': PlutoCell(value: row.date),
+        'ticker': PlutoCell(value: row.ticker),
+        'volatility': PlutoCell(value: row.volatilityScore),
+        'source': PlutoCell(value: row.source),
+      },
+    );
+  }).toList();
+
   FinanceSource? preferredSource;
   List<EarningsRow> rows = [];
 
@@ -356,7 +407,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final grouped = groupByDate(filteredRows);
+    // final grouped = groupByDate(filteredRows);
 
     return Scaffold(
       appBar: AppBar(
@@ -368,72 +419,26 @@ class _EarningsPageState extends State<EarningsPage> {
 
       body: rows.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                sortColumnIndex: 0, // default sort by date
-                sortAscending: true,
-                columns: [
-                  DataColumn(
-                    label: Text("Date"),
-                    onSort: (i, asc) {
-                      setState(() {
-                        filteredRows.sort((a, b) {
-                          final da = DateTime.tryParse(a.date);
-                          final db = DateTime.tryParse(b.date);
-                          return asc ? da!.compareTo(db!) : db!.compareTo(da!);
-                        });
-                      });
-                    },
+          : PlutoGrid(
+              columns: plutoColumns,
+              rows: plutoRows,
+              mode: PlutoGridMode.readOnly,
+              configuration: PlutoGridConfiguration(
+                columnSize: PlutoGridColumnSizeConfig(
+                  autoSizeMode:
+                      PlutoAutoSizeMode.scale, // user can resize manually
+                ),
+                style: PlutoGridStyleConfig(
+                  gridBorderColor: Colors.grey.shade300,
+                  gridBackgroundColor: Colors.white,
+                  activatedColor: Colors.blue.shade50,
+                  activatedBorderColor: Colors.blue.shade200,
+                  cellTextStyle: TextStyle(fontSize: 14),
+                  columnTextStyle: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
                   ),
-                  DataColumn(
-                    label: Text("Ticker"),
-                    onSort: (i, asc) {
-                      setState(() {
-                        filteredRows.sort(
-                          (a, b) => asc
-                              ? a.ticker.compareTo(b.ticker)
-                              : b.ticker.compareTo(a.ticker),
-                        );
-                      });
-                    },
-                  ),
-                  DataColumn(
-                    label: Text("Volatility"),
-                    numeric: true,
-                    onSort: (i, asc) {
-                      setState(() {
-                        filteredRows.sort(
-                          (a, b) => asc
-                              ? a.volatilityScore.compareTo(b.volatilityScore)
-                              : b.volatilityScore.compareTo(a.volatilityScore),
-                        );
-                      });
-                    },
-                  ),
-                  DataColumn(
-                    label: Text("Source"),
-                    onSort: (i, asc) {
-                      setState(() {
-                        filteredRows.sort(
-                          (a, b) => asc
-                              ? a.source.compareTo(b.source)
-                              : b.source.compareTo(a.source),
-                        );
-                      });
-                    },
-                  ),
-                ],
-                rows: filteredRows.map((row) {
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(row.date)),
-                      DataCell(Text(row.ticker)),
-                      DataCell(Text(row.volatilityScore.toStringAsFixed(2))),
-                      DataCell(Text(row.source)),
-                    ],
-                  );
-                }).toList(),
+                ),
               ),
             ),
 
