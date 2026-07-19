@@ -234,72 +234,38 @@ class _EarningsPageState extends State<EarningsPage> {
   // ------------------------------------------------------------
   // FILTERING + SORTING + GROUPING
   // ------------------------------------------------------------
-List<EarningsRow> get filteredRows {
-  List<EarningsRow> list = rows;
+  List<EarningsRow> get filteredRows {
+    List<EarningsRow> list = rows;
 
-  // Near-term filter (next 10 days)
-  if (showNearTermOnly) {
-    final today = DateTime.now();
-    final cutoff = today.add(Duration(days: 10));
+    // Near-term filter (next 10 days)
+    if (showNearTermOnly) {
+      final today = DateTime.now();
+      final cutoff = today.add(Duration(days: 10));
 
-    list = list.where((row) {
-      final d = DateTime.tryParse(row.date);
-      if (d == null) return false;
-      return d.isAfter(today) && d.isBefore(cutoff);
-    }).toList();
-  }
-
-  // High-vol filter
-  if (showHighVolOnly) {
-    list = list.where((row) => row.volatilityScore >= 60).toList();
-  }
-
-  // Sort by date first, then volatility
-  list.sort((a, b) {
-    final da = DateTime.tryParse(a.date);
-    final db = DateTime.tryParse(b.date);
-
-    if (da != null && db != null) {
-      final cmp = da.compareTo(db);
-      if (cmp != 0) return cmp;
+      list = list.where((row) {
+        final d = DateTime.tryParse(row.date);
+        if (d == null) return false;
+        return d.isAfter(today) && d.isBefore(cutoff);
+      }).toList();
     }
-
-    return b.volatilityScore.compareTo(a.volatilityScore);
-  });
-
-  return list;
-}
-
-
-  // High-vol filter
-  if (showHighVolOnly) {
-    list = list.where((row) => row.volatilityScore >= 60).toList();
-  }
-
-  // Sort by date first, then volatility
-  list.sort((a, b) {
-    final da = DateTime.tryParse(a.date);
-    final db = DateTime.tryParse(b.date);
-
-    if (da != null && db != null) {
-      final cmp = da.compareTo(db);
-      if (cmp != 0) return cmp;
-    }
-
-    return b.volatilityScore.compareTo(a.volatilityScore);
-  });
-
-  return list;
-}
-
 
     // High-vol filter
     if (showHighVolOnly) {
       list = list.where((row) => row.volatilityScore >= 60).toList();
     }
 
-    // Sort by volatility (descending)
-    list.sort((a, b) => b.volatilityScore.compareTo(a.volatilityScore));
+    // Sort by date first, then volatility
+    list.sort((a, b) {
+      final da = DateTime.tryParse(a.date);
+      final db = DateTime.tryParse(b.date);
+
+      if (da != null && db != null) {
+        final cmp = da.compareTo(db);
+        if (cmp != 0) return cmp;
+      }
+
+      return b.volatilityScore.compareTo(a.volatilityScore);
+    });
 
     return list;
   }
