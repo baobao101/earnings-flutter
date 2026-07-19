@@ -2,7 +2,7 @@
 
 // git add .
 // git commit -m "Update frontend"
-// git commit -m "Update frontend"
+// git push
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -234,8 +234,7 @@ class _EarningsPageState extends State<EarningsPage> {
   // ------------------------------------------------------------
   // FILTERING + SORTING + GROUPING
   // ------------------------------------------------------------
-
- List<EarningsRow> get filteredRows {
+List<EarningsRow> get filteredRows {
   List<EarningsRow> list = rows;
 
   // Near-term filter (next 10 days)
@@ -249,6 +248,28 @@ class _EarningsPageState extends State<EarningsPage> {
       return d.isAfter(today) && d.isBefore(cutoff);
     }).toList();
   }
+
+  // High-vol filter
+  if (showHighVolOnly) {
+    list = list.where((row) => row.volatilityScore >= 60).toList();
+  }
+
+  // Sort by date first, then volatility
+  list.sort((a, b) {
+    final da = DateTime.tryParse(a.date);
+    final db = DateTime.tryParse(b.date);
+
+    if (da != null && db != null) {
+      final cmp = da.compareTo(db);
+      if (cmp != 0) return cmp;
+    }
+
+    return b.volatilityScore.compareTo(a.volatilityScore);
+  });
+
+  return list;
+}
+
 
   // High-vol filter
   if (showHighVolOnly) {
