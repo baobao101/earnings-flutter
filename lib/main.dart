@@ -1,3 +1,9 @@
+// Whenever you update main.dart or any Flutter file: cd to earnings-app (root folder) and run these commands on the terminal:
+
+// git add .
+// git commit -m "Update frontend"
+// git push
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
