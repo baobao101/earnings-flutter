@@ -90,41 +90,58 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
+  List<PlutoRow> cachedPlutoRows = [];
+
+  void applyCombinedFilter() {
+  stateManager.setFilter((row) {
+    final d = DateTime.tryParse(row.cells['date']!.value);
+    final score = row.cells['volatility']!.value as double;
+
+    final now = DateTime.now();
+    final cutoff = now.add(Duration(days: 4));
+
+    final passesNearTerm = !showNearTermOnly ||
+        (d != null && d.isAfter(now) && d.isBefore(cutoff));
+
+    final passesHighVol = !showHighVolOnly || score >= 60;
+
+    return passesNearTerm && passesHighVol;
+  });
+}
+
+  late PlutoGridStateManager stateManager;
+
   List<EarningsRow> filtered = [];
-  void recomputeFilteredRows() {
-    List<EarningsRow> list = rows;
+void recomputeFilteredRows() {
+  List<EarningsRow> list = rows;
 
-    // Near-term filter
-    if (showNearTermOnly) {
-      final now = DateTime.now();
-      final cutoff = now.add(Duration(days: 10));
+  // Sort once
+  list.sort((a, b) {
+    final da = DateTime.tryParse(a.date);
+    final db = DateTime.tryParse(b.date);
 
-      list = list.where((row) {
-        final d = DateTime.tryParse(row.date);
-        return d != null && d.isAfter(now) && d.isBefore(cutoff);
-      }).toList();
+    if (da != null && db != null) {
+      final cmp = da.compareTo(db);
+      if (cmp != 0) return cmp;
     }
 
-    // High-vol filter
-    if (showHighVolOnly) {
-      list = list.where((row) => row.volatilityScore >= 60).toList();
-    }
+    return b.volatilityScore.compareTo(a.volatilityScore);
+  });
 
-    // Sort once
-    list.sort((a, b) {
-      final da = DateTime.tryParse(a.date);
-      final db = DateTime.tryParse(b.date);
+  filtered = list;
+  cachedPlutoRows = filtered.map((row) {
+  return PlutoRow(
+    cells: {
+      'date': PlutoCell(value: row.date),
+      'ticker': PlutoCell(value: row.ticker),
+      'volatility': PlutoCell(value: row.volatilityScore),
+      'source': PlutoCell(value: row.source),
+    },
+  );
+}).toList();
 
-      if (da != null && db != null) {
-        final cmp = da.compareTo(db);
-        if (cmp != 0) return cmp;
-      }
-
-      return b.volatilityScore.compareTo(a.volatilityScore);
-    });
-
-    filtered = list;
-  }
+  
+}
 
   List<PlutoColumn> get plutoColumns => [
     PlutoColumn(
@@ -411,17 +428,13 @@ class _EarningsPageState extends State<EarningsPage> {
       body: rows.isEmpty
           ? Center(child: CircularProgressIndicator())
           : PlutoGrid(
+            onLoaded: (event) {
+  stateManager = event.stateManager;
+}
+
               columns: plutoColumns,
-              rows: filtered.map((row) {
-                return PlutoRow(
-                  cells: {
-                    'date': PlutoCell(value: row.date),
-                    'ticker': PlutoCell(value: row.ticker),
-                    'volatility': PlutoCell(value: row.volatilityScore),
-                    'source': PlutoCell(value: row.source),
-                  },
-                );
-              }).toList(),
+rows: cachedPlutoRows,
+
 
               mode: PlutoGridMode.readOnly,
               configuration: PlutoGridConfiguration(
@@ -451,28 +464,34 @@ class _EarningsPageState extends State<EarningsPage> {
           children: [
             Row(
               children: [
-                Switch(
-                  value: showNearTermOnly,
-                  onChanged: (v) {
-                    setState(() {
-                      showNearTermOnly = v;
-                      recomputeFilteredRows();
-                    });
-                  },
+Switch(
+  value: showNearTermOnly,
+  onChanged: (v) {
+    setState(() {
+      showNearTermOnly = v;
+      applyCombinedFilter();
+    });
+  },
+),
+
+
                 ),
                 Text("Near-term only"),
               ],
             ),
             Row(
               children: [
-                Switch(
-                  value: showHighVolOnly,
-                  onChanged: (v) {
-                    setState(() {
-                      showHighVolOnly = v;
-                      recomputeFilteredRows();
-                    });
-                  },
+Switch(
+  value: showHighVolOnly,
+  onChanged: (v) {
+    setState(() {
+      showHighVolOnly = v;
+      applyCombinedFilter();
+    });
+  },
+),
+
+
                 ),
                 Text("High-vol only"),
               ],
