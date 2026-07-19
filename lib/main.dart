@@ -93,55 +93,54 @@ class _EarningsPageState extends State<EarningsPage> {
   List<PlutoRow> cachedPlutoRows = [];
 
   void applyCombinedFilter() {
-  stateManager.setFilter((row) {
-    final d = DateTime.tryParse(row.cells['date']!.value);
-    final score = row.cells['volatility']!.value as double;
+    stateManager.setFilter((row) {
+      final d = DateTime.tryParse(row.cells['date']!.value);
+      final score = row.cells['volatility']!.value as double;
 
-    final now = DateTime.now();
-    final cutoff = now.add(Duration(days: 4));
+      final now = DateTime.now();
+      final cutoff = now.add(Duration(days: 4));
 
-    final passesNearTerm = !showNearTermOnly ||
-        (d != null && d.isAfter(now) && d.isBefore(cutoff));
+      final passesNearTerm =
+          !showNearTermOnly ||
+          (d != null && d.isAfter(now) && d.isBefore(cutoff));
 
-    final passesHighVol = !showHighVolOnly || score >= 60;
+      final passesHighVol = !showHighVolOnly || score >= 60;
 
-    return passesNearTerm && passesHighVol;
-  });
-}
+      return passesNearTerm && passesHighVol;
+    });
+  }
 
   late PlutoGridStateManager stateManager;
 
   List<EarningsRow> filtered = [];
-void recomputeFilteredRows() {
-  List<EarningsRow> list = rows;
+  void recomputeFilteredRows() {
+    List<EarningsRow> list = rows;
 
-  // Sort once
-  list.sort((a, b) {
-    final da = DateTime.tryParse(a.date);
-    final db = DateTime.tryParse(b.date);
+    // Sort once
+    list.sort((a, b) {
+      final da = DateTime.tryParse(a.date);
+      final db = DateTime.tryParse(b.date);
 
-    if (da != null && db != null) {
-      final cmp = da.compareTo(db);
-      if (cmp != 0) return cmp;
-    }
+      if (da != null && db != null) {
+        final cmp = da.compareTo(db);
+        if (cmp != 0) return cmp;
+      }
 
-    return b.volatilityScore.compareTo(a.volatilityScore);
-  });
+      return b.volatilityScore.compareTo(a.volatilityScore);
+    });
 
-  filtered = list;
-  cachedPlutoRows = filtered.map((row) {
-  return PlutoRow(
-    cells: {
-      'date': PlutoCell(value: row.date),
-      'ticker': PlutoCell(value: row.ticker),
-      'volatility': PlutoCell(value: row.volatilityScore),
-      'source': PlutoCell(value: row.source),
-    },
-  );
-}).toList();
-
-  
-}
+    filtered = list;
+    cachedPlutoRows = filtered.map((row) {
+      return PlutoRow(
+        cells: {
+          'date': PlutoCell(value: row.date),
+          'ticker': PlutoCell(value: row.ticker),
+          'volatility': PlutoCell(value: row.volatilityScore),
+          'source': PlutoCell(value: row.source),
+        },
+      );
+    }).toList();
+  }
 
   List<PlutoColumn> get plutoColumns => [
     PlutoColumn(
@@ -428,13 +427,12 @@ void recomputeFilteredRows() {
       body: rows.isEmpty
           ? Center(child: CircularProgressIndicator())
           : PlutoGrid(
-            onLoaded: (event) {
-  stateManager = event.stateManager;
-}
+              onLoaded: (event) {
+                stateManager = event.stateManager;
+              },
 
               columns: plutoColumns,
-rows: cachedPlutoRows,
-
+              rows: cachedPlutoRows,
 
               mode: PlutoGridMode.readOnly,
               configuration: PlutoGridConfiguration(
@@ -456,44 +454,43 @@ rows: cachedPlutoRows,
               ),
             ),
 
-bottomNavigationBar: Container(
-  color: Colors.white,
-  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Row(
-        children: [
-          Switch(
-            value: showNearTermOnly,
-            onChanged: (v) {
-              setState(() {
-                showNearTermOnly = v;
-                applyCombinedFilter();
-              });
-            },
-          ),
-          Text("Near-term only"),
-        ],
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Switch(
+                  value: showNearTermOnly,
+                  onChanged: (v) {
+                    setState(() {
+                      showNearTermOnly = v;
+                      applyCombinedFilter();
+                    });
+                  },
+                ),
+                Text("Near-term only"),
+              ],
+            ),
+            Row(
+              children: [
+                Switch(
+                  value: showHighVolOnly,
+                  onChanged: (v) {
+                    setState(() {
+                      showHighVolOnly = v;
+                      applyCombinedFilter();
+                    });
+                  },
+                ),
+                Text("High-vol only"),
+              ],
+            ),
+          ],
+        ),
       ),
-      Row(
-        children: [
-          Switch(
-            value: showHighVolOnly,
-            onChanged: (v) {
-              setState(() {
-                showHighVolOnly = v;
-                applyCombinedFilter();
-              });
-            },
-          ),
-          Text("High-vol only"),
-        ],
-      ),
-    ],
-  ),
-),
-
     );
   }
 }
