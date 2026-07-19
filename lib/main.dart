@@ -101,7 +101,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
       list = list.where((row) {
         final d = DateTime.tryParse(row.date);
-        return d != null && d.isAfter(today) && d.isBefore(cutoff);
+        return d != null && d.isAfter(now) && d.isBefore(cutoff);
       }).toList();
     }
 
