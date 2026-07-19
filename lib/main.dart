@@ -98,7 +98,7 @@ class _EarningsPageState extends State<EarningsPage> {
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
-      enableColumnResize: true,
+
       frozen: PlutoColumnFrozen.start, // sticky column
     ),
     PlutoColumn(
@@ -108,7 +108,6 @@ class _EarningsPageState extends State<EarningsPage> {
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
-      enableColumnResize: true,
     ),
     PlutoColumn(
       title: 'Volatility',
@@ -117,7 +116,6 @@ class _EarningsPageState extends State<EarningsPage> {
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
-      enableColumnResize: true,
     ),
     PlutoColumn(
       title: 'Source',
@@ -126,7 +124,6 @@ class _EarningsPageState extends State<EarningsPage> {
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
-      enableColumnResize: true,
     ),
   ];
   List<PlutoRow> get plutoRows => filteredRows.map((row) {

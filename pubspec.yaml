@@ -33,7 +33,8 @@ dependencies:
 
   http: ^1.2.1
 
-  pluto_grid: ^7.0.0
+  pluto_grid: 6.0.0
+
 
 
   shared_preferences: ^2.2.2
