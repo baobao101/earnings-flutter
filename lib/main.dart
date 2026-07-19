@@ -242,11 +242,13 @@ class _EarningsPageState extends State<EarningsPage> {
 
     // Near-term filter (next 10 days)
     if (showNearTermOnly) {
+      final today = DateTime.now();
+      final cutoff = today.add(Duration(days: 10));
+
       list = list.where((row) {
         final d = DateTime.tryParse(row.date);
         if (d == null) return false;
-        final diff = d.difference(now).inDays;
-        return diff >= 0 && diff <= 10;
+        return d.isAfter(today) && d.isBefore(cutoff);
       }).toList();
     }
 
