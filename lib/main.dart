@@ -58,7 +58,7 @@ class EarningsRow {
   final String ticker;
   final String date;
   final String source;
-  final int volatilityScore;
+  final double volatilityScore;
 
   EarningsRow({
     required this.ticker,
@@ -208,7 +208,7 @@ class _EarningsPageState extends State<EarningsPage> {
   // VOLATILITY BADGE
   // ------------------------------------------------------------
 
-  Widget volatilityBadge(int score) {
+  Widget volatilityBadge(double score) {
     Color color;
     if (score >= 70) {
       color = Colors.redAccent;
