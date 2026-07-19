@@ -493,4 +493,5 @@ bottomNavigationBar: Container(
     ],
   ),
 ),
+    )}
 
