@@ -102,29 +102,76 @@ class _EarningsPageState extends State<EarningsPage> {
     _loadEarnings();
   }
 
-  // ------------------------------------------------------------
-  // FETCH EARNINGS.JSON FROM GITHUB
-  // ------------------------------------------------------------
-
-  Future<List<EarningsRow>> fetchEarnings() async {
-    final url = "https://baobao101.github.io/earnings-data/earnings.json";
-
-    final response = await http.get(Uri.parse(url));
-    final List data = jsonDecode(response.body);
+  List<EarningsRow> parseRows(String jsonStr) {
+    final List data = jsonDecode(jsonStr);
 
     return data.map((row) {
       return EarningsRow(
         ticker: row["ticker"],
         date: row["date"],
         source: row["source"],
-        volatilityScore: row["volatility_score"] ?? 0,
+        volatilityScore: (row["volatility_score"] as num?)?.toDouble() ?? 0.0,
       );
     }).toList();
   }
 
+  // ------------------------------------------------------------
+  // FETCH EARNINGS.JSON FROM GITHUB
+  // ------------------------------------------------------------
+
+  Future<List<EarningsRow>> fetchEarnings() async {
+    final url =
+        "https://cdn.jsdelivr.net/gh/baobao101/earnings-data/earnings.json";
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode != 200) return [];
+
+    return parseRows(response.body);
+  }
+
   Future<void> _loadEarnings() async {
-    rows = await fetchEarnings();
-    setState(() {});
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString("cached_earnings");
+
+    // --- 24-hour auto-refresh check ---
+    final last = prefs.getInt("last_refresh") ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final oneDay = Duration(days: 1).inMilliseconds;
+
+    final shouldRefresh = (now - last) > oneDay;
+
+    // --- Instant load from cache ---
+    if (cached != null && !shouldRefresh) {
+      rows = parseRows(cached);
+      setState(() {});
+    }
+
+    // --- Always fetch fresh if cache missing OR 24h passed ---
+    final fresh = await fetchEarnings();
+    if (fresh.isNotEmpty) {
+      // Save timestamp
+      prefs.setInt("last_refresh", now);
+
+      // Save fresh JSON
+      prefs.setString(
+        "cached_earnings",
+        jsonEncode(
+          fresh
+              .map(
+                (e) => {
+                  "ticker": e.ticker,
+                  "date": e.date,
+                  "source": e.source,
+                  "volatility_score": e.volatilityScore,
+                },
+              )
+              .toList(),
+        ),
+      );
+
+      rows = fresh;
+      setState(() {});
+    }
   }
 
   // ------------------------------------------------------------
@@ -321,29 +368,73 @@ class _EarningsPageState extends State<EarningsPage> {
 
       body: rows.isEmpty
           ? Center(child: CircularProgressIndicator())
-          : ListView(
-              children: grouped.entries.map((entry) {
-                final date = entry.key;
-                final items = entry.value;
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      color: Colors.grey.shade200,
-                      padding: EdgeInsets.all(8),
-                      child: Text(
-                        date,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    ...items.map(buildRow).toList(),
-                  ],
-                );
-              }).toList(),
+          : SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: DataTable(
+                sortColumnIndex: 0, // default sort by date
+                sortAscending: true,
+                columns: [
+                  DataColumn(
+                    label: Text("Date"),
+                    onSort: (i, asc) {
+                      setState(() {
+                        filteredRows.sort((a, b) {
+                          final da = DateTime.tryParse(a.date);
+                          final db = DateTime.tryParse(b.date);
+                          return asc ? da!.compareTo(db!) : db!.compareTo(da!);
+                        });
+                      });
+                    },
+                  ),
+                  DataColumn(
+                    label: Text("Ticker"),
+                    onSort: (i, asc) {
+                      setState(() {
+                        filteredRows.sort(
+                          (a, b) => asc
+                              ? a.ticker.compareTo(b.ticker)
+                              : b.ticker.compareTo(a.ticker),
+                        );
+                      });
+                    },
+                  ),
+                  DataColumn(
+                    label: Text("Volatility"),
+                    numeric: true,
+                    onSort: (i, asc) {
+                      setState(() {
+                        filteredRows.sort(
+                          (a, b) => asc
+                              ? a.volatilityScore.compareTo(b.volatilityScore)
+                              : b.volatilityScore.compareTo(a.volatilityScore),
+                        );
+                      });
+                    },
+                  ),
+                  DataColumn(
+                    label: Text("Source"),
+                    onSort: (i, asc) {
+                      setState(() {
+                        filteredRows.sort(
+                          (a, b) => asc
+                              ? a.source.compareTo(b.source)
+                              : b.source.compareTo(a.source),
+                        );
+                      });
+                    },
+                  ),
+                ],
+                rows: filteredRows.map((row) {
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(row.date)),
+                      DataCell(Text(row.ticker)),
+                      DataCell(Text(row.volatilityScore.toStringAsFixed(2))),
+                      DataCell(Text(row.source)),
+                    ],
+                  );
+                }).toList(),
+              ),
             ),
 
       bottomNavigationBar: Container(
