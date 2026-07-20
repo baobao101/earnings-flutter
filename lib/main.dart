@@ -17,6 +17,7 @@ void main() {
 
 enum FinanceSource { yahoo, google, tradingview, marketwatch, nasdaq }
 
+FinanceSource preferredSource = FinanceSource.tradingview;
 // ------------------------------------------------------------
 // URL HELPERS
 // ------------------------------------------------------------
@@ -34,28 +35,11 @@ String urlForSource(FinanceSource source, String ticker) {
     case FinanceSource.google:
       return "https://www.google.com/finance/quote/$ticker:NASDAQ";
     case FinanceSource.tradingview:
-      return "https://www.tradingview.com/symbols/${ticker.replaceAll('.', '-')}/";
+      return "https://www.tradingview.com/symbols/$ticker";
     case FinanceSource.marketwatch:
       return "https://www.marketwatch.com/investing/stock/$ticker";
     case FinanceSource.nasdaq:
       return "https://www.nasdaq.com/market-activity/stocks/$ticker";
-  }
-}
-
-String displaySource(String source) {
-  switch (source.toLowerCase()) {
-    case "yahoo":
-      return "🟣 Y!";
-    case "google":
-      return "🔵 G";
-    case "tradingview":
-      return "🟢 TV";
-    case "marketwatch":
-      return "🟡 MW";
-    case "nasdaq":
-      return "⚪ NQ";
-    default:
-      return source;
   }
 }
 
@@ -97,7 +81,6 @@ class EarningsRow {
 // ------------------------------------------------------------
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(debugShowCheckedModeBanner: false, home: EarningsPage());
@@ -109,7 +92,6 @@ class MyApp extends StatelessWidget {
 // ------------------------------------------------------------
 
 class EarningsPage extends StatefulWidget {
-  const EarningsPage({super.key});
   @override
   State<EarningsPage> createState() => _EarningsPageState();
 }
@@ -120,37 +102,32 @@ class _EarningsPageState extends State<EarningsPage> {
   List<PlutoRow> cachedPlutoRows = [];
 
   void applyCombinedFilter() {
-    if (stateManager == null) return;
-
-    final search = tickerSearch.trim().toUpperCase();
-    final now = DateTime.now();
-    // final cutoff = now.add(Duration(days: 4));
-    stateManager!.setFilter((row) {
+    stateManager.setFilter((row) {
       final d = DateTime.tryParse(row.cells['date']!.value);
-      final score = (row.cells['volatility']!.value as num).toDouble();
-      final ticker = row.cells['ticker']!.value.toString().toUpperCase();
+      final score = row.cells['volatility']!.value as double;
+      final ticker = row.cells['ticker']!.value.toString().toLowerCase();
 
-      final passesSearch = search.isEmpty || ticker.contains(search);
-
-      final today = DateTime(now.year, now.month, now.day);
+      final now = DateTime.now();
+      final cutoff = now.add(Duration(days: 4));
 
       final passesNearTerm =
           !showNearTermOnly ||
-          (d != null &&
-              !d.isBefore(today) &&
-              d.isBefore(today.add(Duration(days: 5))));
+          (d != null && d.isAfter(now) && d.isBefore(cutoff));
 
       final passesHighVol = !showHighVolOnly || score >= 60;
+
+      final passesSearch =
+          tickerSearch.isEmpty || ticker.contains(tickerSearch.toLowerCase());
 
       return passesNearTerm && passesHighVol && passesSearch;
     });
   }
 
-  PlutoGridStateManager? stateManager;
+  late PlutoGridStateManager stateManager;
 
   List<EarningsRow> filtered = [];
   void recomputeFilteredRows() {
-    List<EarningsRow> list = List.from(rows);
+    List<EarningsRow> list = rows;
 
     list.sort((a, b) {
       final da = DateTime.tryParse(a.date);
@@ -172,7 +149,7 @@ class _EarningsPageState extends State<EarningsPage> {
           'date': PlutoCell(value: row.date),
           'ticker': PlutoCell(value: row.ticker),
           'volatility': PlutoCell(value: row.volatilityScore),
-          'source': PlutoCell(value: displaySource(row.source)),
+          'source': PlutoCell(value: row.source),
         },
       );
     }).toList();
@@ -184,7 +161,6 @@ class _EarningsPageState extends State<EarningsPage> {
     PlutoColumn(
       title: 'Date',
       field: 'date',
-      width: 120,
       type: PlutoColumnType.text(),
       enableSorting: true,
       enableFilterMenuItem: true,
@@ -195,7 +171,6 @@ class _EarningsPageState extends State<EarningsPage> {
     PlutoColumn(
       title: 'Ticker',
       field: 'ticker',
-      width: 90,
       type: PlutoColumnType.text(),
       enableSorting: true,
       enableFilterMenuItem: true,
@@ -204,7 +179,7 @@ class _EarningsPageState extends State<EarningsPage> {
       renderer: (context) {
         final ticker = context.cell.value.toString();
 
-        return GestureDetector(
+        return InkWell(
           onTap: () => openTickerSmart(ticker),
           child: Text(
             ticker,
@@ -221,15 +196,7 @@ class _EarningsPageState extends State<EarningsPage> {
     PlutoColumn(
       title: 'Volatility',
       field: 'volatility',
-      width: 90,
       type: PlutoColumnType.number(),
-
-      renderer: (context) {
-        final score = (context.cell.value as num).toDouble();
-
-        return volatilityBadge(score);
-      },
-
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
@@ -238,7 +205,6 @@ class _EarningsPageState extends State<EarningsPage> {
     PlutoColumn(
       title: 'Source',
       field: 'source',
-      width: 80,
       type: PlutoColumnType.text(),
       enableSorting: true,
       enableFilterMenuItem: true,
@@ -251,12 +217,6 @@ class _EarningsPageState extends State<EarningsPage> {
 
   bool showNearTermOnly = false;
   bool showHighVolOnly = false;
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -285,16 +245,11 @@ class _EarningsPageState extends State<EarningsPage> {
   Future<List<EarningsRow>> fetchEarnings() async {
     final url =
         "https://cdn.jsdelivr.net/gh/baobao101/earnings-data/earnings.json";
+    final response = await http.get(Uri.parse(url));
 
-    try {
-      final response = await http.get(Uri.parse(url));
+    if (response.statusCode != 200) return [];
 
-      if (response.statusCode != 200) return [];
-
-      return parseRows(response.body);
-    } catch (e) {
-      return [];
-    }
+    return parseRows(response.body);
   }
 
   Future<void> _loadEarnings() async {
@@ -310,9 +265,6 @@ class _EarningsPageState extends State<EarningsPage> {
     if (cached != null && !shouldRefresh) {
       rows = parseRows(cached);
       recomputeFilteredRows();
-      // stateManager?.removeAllRows();
-      // stateManager?.appendRows(cachedPlutoRows);
-      if (!mounted) return;
       setState(() {});
     }
 
@@ -337,13 +289,7 @@ class _EarningsPageState extends State<EarningsPage> {
       );
 
       rows = fresh;
-<<<<<<< HEAD
-      recomputeFilteredRows();
-      stateManager?.removeAllRows();
-      stateManager?.appendRows(cachedPlutoRows);
-=======
       recomputeFilteredRows(); // <-- FIX
->>>>>>> 6255293
       setState(() {});
     }
   }
@@ -363,15 +309,12 @@ class _EarningsPageState extends State<EarningsPage> {
       );
     }
 
-    if (!mounted) return;
     setState(() {});
   }
 
   Future<void> setPreferredSource(FinanceSource source) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("preferred_source", source.name);
-    if (!mounted) return;
-
+    prefs.setString("preferred_source", source.name);
     setState(() {
       preferredSource = source;
     });
@@ -386,11 +329,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
     final uri = Uri.parse(urlForSource(source, ticker));
 
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-
-    if (!opened) {
-      debugPrint("Could not open $uri");
-    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   // ------------------------------------------------------------
@@ -436,11 +375,11 @@ class _EarningsPageState extends State<EarningsPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        "⚡ ${score.toStringAsFixed(0)}",
+        "⚡ $score",
         style: TextStyle(color: color, fontWeight: FontWeight.bold),
       ),
     );
@@ -515,20 +454,20 @@ class _EarningsPageState extends State<EarningsPage> {
                               icon: Icon(Icons.clear),
                               onPressed: () {
                                 searchController.clear();
-
                                 setState(() {
                                   tickerSearch = "";
+                                  applyCombinedFilter();
                                 });
-
-                                applyCombinedFilter();
                               },
                             )
                           : null,
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (value) {
-                      tickerSearch = value;
-                      applyCombinedFilter();
+                      setState(() {
+                        tickerSearch = value;
+                        applyCombinedFilter();
+                      });
                     },
                   ),
                 ),
@@ -536,17 +475,13 @@ class _EarningsPageState extends State<EarningsPage> {
                   child: PlutoGrid(
                     onLoaded: (event) {
                       stateManager = event.stateManager;
-
-                      stateManager!.appendRows(cachedPlutoRows);
-
-                      applyCombinedFilter();
                     },
                     columns: plutoColumns,
                     rows: cachedPlutoRows,
                     mode: PlutoGridMode.readOnly,
                     configuration: PlutoGridConfiguration(
                       columnSize: PlutoGridColumnSizeConfig(
-                        autoSizeMode: PlutoAutoSizeMode.none,
+                        autoSizeMode: PlutoAutoSizeMode.scale,
                       ),
                       style: PlutoGridStyleConfig(
                         gridBorderColor: Colors.grey.shade300,
