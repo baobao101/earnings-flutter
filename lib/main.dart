@@ -252,7 +252,8 @@ class _EarningsPageState extends State<EarningsPage> {
 
   Future<List<EarningsRow>> fetchEarnings() async {
     final url =
-        "https://cdn.jsdelivr.net/gh/baobao101/earnings-data/earnings.json";
+        "https://raw.githubusercontent.com/baobao101/earnings-data/main/earnings.json";
+
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode != 200) return [];
