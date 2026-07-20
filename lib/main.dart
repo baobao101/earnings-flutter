@@ -490,7 +490,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
                     columns: plutoColumns,
                     rows: cachedPlutoRows,
-                    mode: PlutoGridMode.readOnly,
+                    mode: PlutoGridMode.select,
                     configuration: PlutoGridConfiguration(
                       columnSize: PlutoGridColumnSizeConfig(
                         autoSizeMode: PlutoAutoSizeMode.scale,
