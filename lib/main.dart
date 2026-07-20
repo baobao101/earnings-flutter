@@ -151,6 +151,16 @@ class _EarningsPageState extends State<EarningsPage> {
 
   List<PlutoColumn> get plutoColumns => [
     PlutoColumn(
+      title: 'Date',
+      field: 'date',
+      type: PlutoColumnType.text(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
+      frozen: PlutoColumnFrozen.start,
+    ),
+
+    PlutoColumn(
       title: 'Ticker',
       field: 'ticker',
       type: PlutoColumnType.text(),
@@ -173,6 +183,24 @@ class _EarningsPageState extends State<EarningsPage> {
           ),
         );
       },
+    ),
+
+    PlutoColumn(
+      title: 'Volatility',
+      field: 'volatility',
+      type: PlutoColumnType.number(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
+    ),
+
+    PlutoColumn(
+      title: 'Source',
+      field: 'source',
+      type: PlutoColumnType.text(),
+      enableSorting: true,
+      enableFilterMenuItem: true,
+      enableColumnDrag: true,
     ),
   ];
 
