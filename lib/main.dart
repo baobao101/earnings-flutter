@@ -91,39 +91,44 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
-  late PlutoGridStateManager stateManager;
+  PlutoGridStateManager? stateManager;
+
   List<PlutoRow> cachedPlutoRows = [];
 
   final TextEditingController searchController = TextEditingController();
   String tickerSearch = "";
 
   void applyCombinedFilter() {
-    stateManager.setFilter((row) {
-      final d = DateTime.tryParse(row.cells['date']!.value);
-      final score = row.cells['volatility']!.value as double;
-      final ticker = row.cells['ticker']!.value.toString().toLowerCase();
+    if (stateManager != null) {
+      stateManager!.setFilter((row) {
+        final d = DateTime.tryParse(row.cells['date']!.value);
+        final score = row.cells['volatility']!.value as double;
+        final ticker = row.cells['ticker']!.value.toString().toLowerCase();
 
-      final now = DateTime.now();
-      final cutoff = now.add(Duration(days: 4));
+        final now = DateTime.now();
+        final cutoff = now.add(Duration(days: 4));
 
-      final passesNearTerm =
-          !showNearTermOnly ||
-          (d != null && d.isAfter(now) && d.isBefore(cutoff));
+        final passesNearTerm =
+            !showNearTermOnly ||
+            (d != null && d.isAfter(now) && d.isBefore(cutoff));
 
-      final passesHighVol = !showHighVolOnly || score >= 60;
+        final passesHighVol = !showHighVolOnly || score >= 60;
 
-      final passesSearch =
-          tickerSearch.isEmpty || ticker.contains(tickerSearch.toLowerCase());
+        final passesSearch =
+            tickerSearch.isEmpty || ticker.contains(tickerSearch.toLowerCase());
 
-      return passesNearTerm && passesHighVol && passesSearch;
-    });
+        return passesNearTerm && passesHighVol && passesSearch;
+      });
+      stateManager!.notifyListeners(); // <-- optional but improves UI refresh
+    }
   }
 
   void refreshGridRows() {
-    if (stateManager != null) {
-      stateManager.removeAllRows();
-      stateManager.appendRows(cachedPlutoRows);
-    }
+    if (!mounted) return;
+    if (stateManager == null) return; // <-- SAFE GUARD
+
+    stateManager!.removeAllRows();
+    stateManager!.appendRows(cachedPlutoRows);
   }
 
   List<EarningsRow> filtered = [];
@@ -155,7 +160,9 @@ class _EarningsPageState extends State<EarningsPage> {
       );
     }).toList();
 
-    refreshGridRows(); // <-- FIX
+    if (stateManager != null) {
+      refreshGridRows();
+    }
   }
 
   List<PlutoColumn> get plutoColumns => [
@@ -476,7 +483,9 @@ class _EarningsPageState extends State<EarningsPage> {
                   child: PlutoGrid(
                     onLoaded: (event) {
                       stateManager = event.stateManager;
+                      refreshGridRows(); // <-- NOW SAFE
                     },
+
                     columns: plutoColumns,
                     rows: cachedPlutoRows,
                     mode: PlutoGridMode.readOnly,
