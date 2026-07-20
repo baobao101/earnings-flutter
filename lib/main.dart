@@ -251,14 +251,32 @@ class _EarningsPageState extends State<EarningsPage> {
   // ------------------------------------------------------------
 
   Future<List<EarningsRow>> fetchEarnings() async {
-    final url =
+    const jsDelivrUrl =
+        "https://cdn.jsdelivr.net/gh/baobao101/earnings-data/earnings.json";
+
+    const rawGithubUrl =
         "https://raw.githubusercontent.com/baobao101/earnings-data/main/earnings.json";
 
-    final response = await http.get(Uri.parse(url));
+    // Try jsDelivr first
+    try {
+      final response = await http.get(Uri.parse(jsDelivrUrl));
 
-    if (response.statusCode != 200) return [];
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        return parseRows(response.body);
+      }
+    } catch (_) {}
 
-    return parseRows(response.body);
+    // Fallback to raw GitHub
+    try {
+      final response = await http.get(Uri.parse(rawGithubUrl));
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        return parseRows(response.body);
+      }
+    } catch (_) {}
+
+    // If both fail, return empty list
+    return [];
   }
 
   Future<void> _loadEarnings() async {
