@@ -158,8 +158,8 @@ class _EarningsPageState extends State<EarningsPage> {
       enableFilterMenuItem: true,
       enableColumnDrag: true,
 
-      renderer: (rendererContext) {
-        final ticker = rendererContext.cell.value.toString();
+      renderer: (context) {
+        final ticker = context.cell.value.toString();
 
         return InkWell(
           onTap: () => openTickerSmart(ticker),
