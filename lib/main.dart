@@ -20,6 +20,12 @@ enum FinanceSource { yahoo, google, tradingview, marketwatch, nasdaq }
 // ------------------------------------------------------------
 // URL HELPERS
 // ------------------------------------------------------------
+void refreshGridRows() {
+  if (stateManager != null) {
+    stateManager.removeAllRows();
+    stateManager.appendRows(cachedPlutoRows);
+  }
+}
 
 String urlForSource(FinanceSource source, String ticker) {
   switch (source) {
@@ -146,7 +152,6 @@ class _EarningsPageState extends State<EarningsPage> {
   void recomputeFilteredRows() {
     List<EarningsRow> list = List.from(rows);
 
-    // Sort once
     list.sort((a, b) {
       final da = DateTime.tryParse(a.date);
       final db = DateTime.tryParse(b.date);
@@ -160,6 +165,7 @@ class _EarningsPageState extends State<EarningsPage> {
     });
 
     filtered = list;
+
     cachedPlutoRows = filtered.map((row) {
       return PlutoRow(
         cells: {
@@ -170,6 +176,8 @@ class _EarningsPageState extends State<EarningsPage> {
         },
       );
     }).toList();
+
+    refreshGridRows(); // <-- FIX
   }
 
   List<PlutoColumn> get plutoColumns => [
@@ -293,14 +301,12 @@ class _EarningsPageState extends State<EarningsPage> {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString("cached_earnings");
 
-    // --- 24-hour auto-refresh check ---
     final last = prefs.getInt("last_refresh") ?? 0;
     final now = DateTime.now().millisecondsSinceEpoch;
     final oneDay = Duration(days: 1).inMilliseconds;
 
     final shouldRefresh = (now - last) > oneDay;
 
-    // --- Instant load from cache ---
     if (cached != null && !shouldRefresh) {
       rows = parseRows(cached);
       recomputeFilteredRows();
@@ -310,13 +316,10 @@ class _EarningsPageState extends State<EarningsPage> {
       setState(() {});
     }
 
-    // --- Always fetch fresh if cache missing OR 24h passed ---
     final fresh = await fetchEarnings();
     if (fresh.isNotEmpty) {
-      // Save timestamp
       prefs.setInt("last_refresh", now);
 
-      // Save fresh JSON
       prefs.setString(
         "cached_earnings",
         jsonEncode(
@@ -334,9 +337,13 @@ class _EarningsPageState extends State<EarningsPage> {
       );
 
       rows = fresh;
+<<<<<<< HEAD
       recomputeFilteredRows();
       stateManager?.removeAllRows();
       stateManager?.appendRows(cachedPlutoRows);
+=======
+      recomputeFilteredRows(); // <-- FIX
+>>>>>>> 6255293
       setState(() {});
     }
   }
