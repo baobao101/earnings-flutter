@@ -250,6 +250,17 @@ class _EarningsPageState extends State<EarningsPage> {
   // FETCH EARNINGS.JSON FROM GITHUB
   // ------------------------------------------------------------
 
+  bool isValidJson(String body) {
+    if (body.isEmpty) return false;
+    if (body.startsWith("<")) return false; // HTML error page
+    try {
+      jsonDecode(body);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<List<EarningsRow>> fetchEarnings() async {
     const jsDelivrUrl =
         "https://cdn.jsdelivr.net/gh/baobao101/earnings-data/earnings.json";
@@ -260,8 +271,7 @@ class _EarningsPageState extends State<EarningsPage> {
     // Try jsDelivr first
     try {
       final response = await http.get(Uri.parse(jsDelivrUrl));
-
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
+      if (response.statusCode == 200 && isValidJson(response.body)) {
         return parseRows(response.body);
       }
     } catch (_) {}
@@ -269,13 +279,11 @@ class _EarningsPageState extends State<EarningsPage> {
     // Fallback to raw GitHub
     try {
       final response = await http.get(Uri.parse(rawGithubUrl));
-
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
+      if (response.statusCode == 200 && isValidJson(response.body)) {
         return parseRows(response.body);
       }
     } catch (_) {}
 
-    // If both fail, return empty list
     return [];
   }
 
