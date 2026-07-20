@@ -448,7 +448,7 @@ class _EarningsPageState extends State<EarningsPage> {
         ],
       ),
 
-      body: rows.isEmpty
+      body: cachedPlutoRows.isEmpty
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
