@@ -273,6 +273,7 @@ class _EarningsPageState extends State<EarningsPage> {
     if (cached != null && !shouldRefresh) {
       rows = parseRows(cached);
       recomputeFilteredRows();
+      refreshGridRows(); // <-- ADD THIS
       setState(() {});
     }
 
@@ -297,7 +298,8 @@ class _EarningsPageState extends State<EarningsPage> {
       );
 
       rows = fresh;
-      recomputeFilteredRows(); // <-- FIX
+      recomputeFilteredRows();
+      refreshGridRows(); // <-- ADD THIS
       setState(() {});
     }
   }
