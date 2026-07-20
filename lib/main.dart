@@ -174,30 +174,6 @@ class _EarningsPageState extends State<EarningsPage> {
         );
       },
     ),
-    PlutoColumn(
-      title: 'Ticker',
-      field: 'ticker',
-      type: PlutoColumnType.text(),
-      enableSorting: true,
-      enableFilterMenuItem: true,
-      enableColumnDrag: true,
-    ),
-    PlutoColumn(
-      title: 'Volatility',
-      field: 'volatility',
-      type: PlutoColumnType.number(),
-      enableSorting: true,
-      enableFilterMenuItem: true,
-      enableColumnDrag: true,
-    ),
-    PlutoColumn(
-      title: 'Source',
-      field: 'source',
-      type: PlutoColumnType.text(),
-      enableSorting: true,
-      enableFilterMenuItem: true,
-      enableColumnDrag: true,
-    ),
   ];
 
   FinanceSource? preferredSource;
