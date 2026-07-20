@@ -17,6 +17,7 @@ void main() {
 
 enum FinanceSource { yahoo, google, tradingview, marketwatch, nasdaq }
 
+FinanceSource preferredSource = FinanceSource.tradingview;
 // ------------------------------------------------------------
 // URL HELPERS
 // ------------------------------------------------------------
@@ -150,14 +151,28 @@ class _EarningsPageState extends State<EarningsPage> {
 
   List<PlutoColumn> get plutoColumns => [
     PlutoColumn(
-      title: 'Date',
-      field: 'date',
+      title: 'Ticker',
+      field: 'ticker',
       type: PlutoColumnType.text(),
       enableSorting: true,
       enableFilterMenuItem: true,
       enableColumnDrag: true,
 
-      frozen: PlutoColumnFrozen.start, // sticky column
+      renderer: (rendererContext) {
+        final ticker = rendererContext.cell.value.toString();
+
+        return InkWell(
+          onTap: () => openTickerSmart(ticker),
+          child: Text(
+            ticker,
+            style: const TextStyle(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
     ),
     PlutoColumn(
       title: 'Ticker',
@@ -280,9 +295,14 @@ class _EarningsPageState extends State<EarningsPage> {
   Future<void> _loadPreferredSource() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString("preferred_source");
+
     if (name != null) {
-      preferredSource = FinanceSource.values.firstWhere((s) => s.name == name);
+      preferredSource = FinanceSource.values.firstWhere(
+        (s) => s.name == name,
+        orElse: () => FinanceSource.tradingview,
+      );
     }
+
     setState(() {});
   }
 
@@ -299,29 +319,11 @@ class _EarningsPageState extends State<EarningsPage> {
   // ------------------------------------------------------------
 
   Future<void> openTickerSmart(String ticker) async {
-    final sources = FinanceSource.values.toList();
+    final source = preferredSource ?? FinanceSource.tradingview;
 
-    if (preferredSource != null) {
-      sources.remove(preferredSource);
-      sources.insert(0, preferredSource!);
-    }
+    final uri = Uri.parse(urlForSource(source, ticker));
 
-    for (final source in sources) {
-      final url = urlForSource(source, ticker);
-      final uri = Uri.parse(url);
-
-      if (await canLaunchUrl(uri)) {
-        final launched = await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (launched) return;
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Unable to open financial info right now")),
-    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   // ------------------------------------------------------------
