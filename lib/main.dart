@@ -21,12 +21,6 @@ FinanceSource preferredSource = FinanceSource.tradingview;
 // ------------------------------------------------------------
 // URL HELPERS
 // ------------------------------------------------------------
-void refreshGridRows() {
-  if (stateManager != null) {
-    stateManager.removeAllRows();
-    stateManager.appendRows(cachedPlutoRows);
-  }
-}
 
 String urlForSource(FinanceSource source, String ticker) {
   switch (source) {
@@ -97,9 +91,11 @@ class EarningsPage extends StatefulWidget {
 }
 
 class _EarningsPageState extends State<EarningsPage> {
+  late PlutoGridStateManager stateManager;
+  List<PlutoRow> cachedPlutoRows = [];
+
   final TextEditingController searchController = TextEditingController();
   String tickerSearch = "";
-  List<PlutoRow> cachedPlutoRows = [];
 
   void applyCombinedFilter() {
     stateManager.setFilter((row) {
@@ -123,7 +119,12 @@ class _EarningsPageState extends State<EarningsPage> {
     });
   }
 
-  late PlutoGridStateManager stateManager;
+  void refreshGridRows() {
+    if (stateManager != null) {
+      stateManager.removeAllRows();
+      stateManager.appendRows(cachedPlutoRows);
+    }
+  }
 
   List<EarningsRow> filtered = [];
   void recomputeFilteredRows() {
