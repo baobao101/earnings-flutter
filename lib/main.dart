@@ -165,10 +165,14 @@ class _EarningsPageState extends State<EarningsPage> {
         },
       );
     }).toList();
-
+    print("cachedPlutoRows = ${cachedPlutoRows.length}");
     if (stateManager != null) {
       refreshGridRows();
     }
+    print("rows: ${rows.length}");
+    print("filtered: ${filtered.length}");
+    print("cachedPlutoRows: ${cachedPlutoRows.length}");
+    print("cachedPlutoRows: ${cachedPlutoRows.length}");
   }
 
   List<PlutoColumn> get plutoColumns => [
@@ -524,7 +528,14 @@ class _EarningsPageState extends State<EarningsPage> {
                   child: PlutoGrid(
                     onLoaded: (event) {
                       stateManager = event.stateManager;
+                      print("Grid loaded");
+                      print(
+                        "Grid rows before refresh: ${stateManager!.rows.length}",
+                      );
                       refreshGridRows(); // <-- NOW SAFE
+                      print(
+                        "Grid rows after refresh: ${stateManager!.rows.length}",
+                      );
                     },
 
                     columns: plutoColumns,
