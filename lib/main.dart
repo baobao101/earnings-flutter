@@ -129,14 +129,6 @@ class _EarningsPageState extends State<EarningsPage> {
     }
   }
 
-  // void refreshGridRows() {
-  //   if (!mounted) return;
-  //   if (stateManager == null) return; // <-- SAFE GUARD
-
-  //   stateManager!.removeAllRows();
-  //   stateManager!.appendRows(cachedPlutoRows);
-  // }
-
   List<EarningsRow> filtered = [];
   void recomputeFilteredRows() {
     List<EarningsRow> list = rows;
@@ -165,14 +157,7 @@ class _EarningsPageState extends State<EarningsPage> {
         },
       );
     }).toList();
-    print("cachedPlutoRows = ${cachedPlutoRows.length}");
-    if (stateManager != null) {
-      // refreshGridRows();
-    }
-    print("rows: ${rows.length}");
-    print("filtered: ${filtered.length}");
-    print("cachedPlutoRows: ${cachedPlutoRows.length}");
-    print("cachedPlutoRows: ${cachedPlutoRows.length}");
+    if (stateManager != null) {}
   }
 
   List<PlutoColumn> get plutoColumns => [
@@ -245,7 +230,6 @@ class _EarningsPageState extends State<EarningsPage> {
 
   List<EarningsRow> parseRows(String jsonStr) {
     final List data = jsonDecode(jsonStr);
-    print("Parsed ${data.length} rows");
     return data.map((row) {
       return EarningsRow(
         ticker: row["ticker"],
@@ -289,8 +273,6 @@ class _EarningsPageState extends State<EarningsPage> {
     // Fallback to raw GitHub
     try {
       final response = await http.get(Uri.parse(rawGithubUrl));
-      print("Status: ${response.statusCode}");
-      print(response.body.substring(0, 100));
       if (response.statusCode == 200 && isValidJson(response.body)) {
         return parseRows(response.body);
       }
@@ -313,10 +295,8 @@ class _EarningsPageState extends State<EarningsPage> {
     if (cached != null && cached.isNotEmpty && !shouldRefresh) {
       rows = parseRows(cached);
       recomputeFilteredRows();
-      print("cachedPlutoRows = ${cachedPlutoRows.length}");
-      // refreshGridRows();
       setState(() {});
-      return; // <-- IMPORTANT
+      return;
     }
 
     // Otherwise fetch fresh data
@@ -342,7 +322,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
       rows = fresh;
       recomputeFilteredRows();
-      // refreshGridRows();
+
       setState(() {});
     }
   }
@@ -481,8 +461,6 @@ class _EarningsPageState extends State<EarningsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // final grouped = groupByDate(filteredRows);
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Earnings Viewer"),
@@ -528,14 +506,6 @@ class _EarningsPageState extends State<EarningsPage> {
                   child: PlutoGrid(
                     onLoaded: (event) {
                       stateManager = event.stateManager;
-                      print("Grid loaded");
-                      print(
-                        "Grid rows before refresh: ${stateManager!.rows.length}",
-                      );
-                      // refreshGridRows(); // <-- NOW SAFE
-                      print(
-                        "Grid rows after refresh: ${stateManager!.rows.length}",
-                      );
                     },
 
                     columns: plutoColumns,
