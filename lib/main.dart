@@ -81,9 +81,14 @@ class EarningsRow {
 // ------------------------------------------------------------
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: EarningsPage());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: const EarningsPage(),
+    );
   }
 }
 
@@ -92,6 +97,8 @@ class MyApp extends StatelessWidget {
 // ------------------------------------------------------------
 
 class EarningsPage extends StatefulWidget {
+  const EarningsPage({super.key});
+
   @override
   State<EarningsPage> createState() => _EarningsPageState();
 }
@@ -406,9 +413,9 @@ class _EarningsPageState extends State<EarningsPage> {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
