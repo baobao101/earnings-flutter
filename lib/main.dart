@@ -3,6 +3,11 @@
 // git add .
 // git commit -m "Update frontend"
 // git push
+// flutter analyze
+// flutter clean
+// flutter pub get
+// flutter run
+
 import 'package:pluto_grid/pluto_grid.dart';
 
 import 'package:flutter/material.dart';
@@ -297,7 +302,8 @@ class _EarningsPageState extends State<EarningsPage> {
 
     final shouldRefresh = (now - last) > oneDay;
 
-    if (cached != null && !shouldRefresh) {
+if (cached != null && cached.isNotEmpty && !shouldRefresh) {
+{
       rows = parseRows(cached);
       recomputeFilteredRows();
       refreshGridRows(); // <-- ADD THIS
