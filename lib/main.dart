@@ -241,7 +241,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
   List<EarningsRow> parseRows(String jsonStr) {
     final List data = jsonDecode(jsonStr);
-
+    print("Parsed ${data.length} rows");
     return data.map((row) {
       return EarningsRow(
         ticker: row["ticker"],
@@ -285,6 +285,8 @@ class _EarningsPageState extends State<EarningsPage> {
     // Fallback to raw GitHub
     try {
       final response = await http.get(Uri.parse(rawGithubUrl));
+      print("Status: ${response.statusCode}");
+      print(response.body.substring(0, 100));
       if (response.statusCode == 200 && isValidJson(response.body)) {
         return parseRows(response.body);
       }
@@ -307,6 +309,7 @@ class _EarningsPageState extends State<EarningsPage> {
     if (cached != null && cached.isNotEmpty && !shouldRefresh) {
       rows = parseRows(cached);
       recomputeFilteredRows();
+      print("cachedPlutoRows = ${cachedPlutoRows.length}");
       refreshGridRows();
       setState(() {});
       return; // <-- IMPORTANT
