@@ -111,12 +111,13 @@ class _EarningsPageState extends State<EarningsPage> {
         final score = row.cells['volatility']!.value as double;
         final ticker = row.cells['ticker']!.value.toString().toLowerCase();
 
-        final now = DateTime.now();
-        final cutoff = now.add(Duration(days: 4));
+        final today = DateTime.now();
+        final startOfToday = DateTime(today.year, today.month, today.day);
+        final cutoff = startOfToday.add(Duration(days: 4));
 
         final passesNearTerm =
             !showNearTermOnly ||
-            (d != null && d.isAfter(now) && d.isBefore(cutoff));
+            (d != null && !d.isBefore(startOfToday) && d.isBefore(cutoff));
 
         final passesHighVol = !showHighVolOnly || score >= 60;
 
