@@ -1,9 +1,10 @@
 // Whenever you update main.dart or any Flutter file: cd to earnings-app (root folder) and run these commands on the terminal:
 
+// flutter analyze
 // git add .
 // git commit -m "Update frontend"
 // git push
-// flutter analyze
+
 // flutter clean
 // flutter pub get
 // flutter run
