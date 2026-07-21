@@ -121,21 +121,20 @@ class _EarningsPageState extends State<EarningsPage> {
         final passesHighVol = !showHighVolOnly || score >= 60;
 
         final passesSearch =
-            tickerSearch.isEmpty || ticker.contains(tickerSearch.toLowerCase());
+            tickerSearch.isEmpty || ticker.contains(tickerSearch);
 
         return passesNearTerm && passesHighVol && passesSearch;
       });
-      stateManager!.notifyListeners(); // <-- optional but improves UI refresh
     }
   }
 
-  void refreshGridRows() {
-    if (!mounted) return;
-    if (stateManager == null) return; // <-- SAFE GUARD
+  // void refreshGridRows() {
+  //   if (!mounted) return;
+  //   if (stateManager == null) return; // <-- SAFE GUARD
 
-    stateManager!.removeAllRows();
-    stateManager!.appendRows(cachedPlutoRows);
-  }
+  //   stateManager!.removeAllRows();
+  //   stateManager!.appendRows(cachedPlutoRows);
+  // }
 
   List<EarningsRow> filtered = [];
   void recomputeFilteredRows() {
@@ -167,7 +166,7 @@ class _EarningsPageState extends State<EarningsPage> {
     }).toList();
     print("cachedPlutoRows = ${cachedPlutoRows.length}");
     if (stateManager != null) {
-      refreshGridRows();
+      // refreshGridRows();
     }
     print("rows: ${rows.length}");
     print("filtered: ${filtered.length}");
@@ -314,7 +313,7 @@ class _EarningsPageState extends State<EarningsPage> {
       rows = parseRows(cached);
       recomputeFilteredRows();
       print("cachedPlutoRows = ${cachedPlutoRows.length}");
-      refreshGridRows();
+      // refreshGridRows();
       setState(() {});
       return; // <-- IMPORTANT
     }
@@ -342,7 +341,7 @@ class _EarningsPageState extends State<EarningsPage> {
 
       rows = fresh;
       recomputeFilteredRows();
-      refreshGridRows();
+      // refreshGridRows();
       setState(() {});
     }
   }
@@ -532,7 +531,7 @@ class _EarningsPageState extends State<EarningsPage> {
                       print(
                         "Grid rows before refresh: ${stateManager!.rows.length}",
                       );
-                      refreshGridRows(); // <-- NOW SAFE
+                      // refreshGridRows(); // <-- NOW SAFE
                       print(
                         "Grid rows after refresh: ${stateManager!.rows.length}",
                       );
