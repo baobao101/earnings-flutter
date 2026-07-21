@@ -302,14 +302,16 @@ class _EarningsPageState extends State<EarningsPage> {
 
     final shouldRefresh = (now - last) > oneDay;
 
-if (cached != null && cached.isNotEmpty && !shouldRefresh) {
-{
+    // Use cached data only if valid AND not expired
+    if (cached != null && cached.isNotEmpty && !shouldRefresh) {
       rows = parseRows(cached);
       recomputeFilteredRows();
-      refreshGridRows(); // <-- ADD THIS
+      refreshGridRows();
       setState(() {});
+      return; // <-- IMPORTANT
     }
 
+    // Otherwise fetch fresh data
     final fresh = await fetchEarnings();
     if (fresh.isNotEmpty) {
       prefs.setInt("last_refresh", now);
@@ -332,7 +334,7 @@ if (cached != null && cached.isNotEmpty && !shouldRefresh) {
 
       rows = fresh;
       recomputeFilteredRows();
-      refreshGridRows(); // <-- ADD THIS
+      refreshGridRows();
       setState(() {});
     }
   }
