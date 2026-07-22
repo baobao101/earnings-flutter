@@ -1,4 +1,5 @@
 // Whenever you update main.dart or any Flutter file: cd to earnings-app (root folder) and run these commands on the terminal:
+// flutter pub get (only if new import or modified pub yaml)
 // flutter doctor
 // flutter analyze
 // git add .
@@ -346,7 +347,8 @@ class _EarningsPageState extends State<EarningsPage> {
               .map(
                 (e) => {
                   "ticker": e.ticker,
-                  "date": e.date,
+                  "date": e.date.toIso8601String(),
+
                   "source": e.source,
                   "volatility_score": e.volatilityScore,
                 },
