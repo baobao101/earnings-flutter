@@ -205,16 +205,51 @@ class _EarningsPageState extends State<EarningsPage> {
       renderer: (context) {
         final ticker = context.cell.value.toString();
 
-        return InkWell(
-          onTap: () => openTickerSmart(ticker),
-          child: Text(
-            ticker,
-            style: const TextStyle(
-              color: Colors.blue,
-              decoration: TextDecoration.underline,
-              fontWeight: FontWeight.bold,
+        final row = rows.firstWhere(
+          (r) =>
+              r.ticker == ticker &&
+              r.date.toString().split(' ')[0] ==
+                  context.row.cells['date']!.value,
+        );
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => openTickerSmart(ticker),
+                child: Text(
+                  ticker,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
-          ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.event, size: 18),
+                  splashRadius: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => saveToCalendar(row),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.notifications, size: 18),
+                  splashRadius: 18,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => scheduleReminder(row),
+                ),
+              ],
+            ),
+          ],
         );
       },
     ),
