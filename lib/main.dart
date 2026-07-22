@@ -1,5 +1,5 @@
 // Whenever you update main.dart or any Flutter file: cd to earnings-app (root folder) and run these commands on the terminal:
-
+// flutter doctor
 // flutter analyze
 // git add .
 // git commit -m "Update frontend"
@@ -10,12 +10,29 @@
 // flutter run
 
 import 'package:pluto_grid/pluto_grid.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:add_2_calendar/add_2_calendar.dart';
+
+Future<void> saveToCalendar(EarningsRow row) async {
+  final date = row.date;
+
+  final event = Event(
+    title: "${row.ticker} Earnings",
+    description: "Earnings date for ${row.ticker}",
+    startDate: date,
+    endDate: date.add(Duration(hours: 1)),
+  );
+
+  Add2Calendar.addEvent2Cal(event);
+}
 
 void main() {
   runApp(MyApp());
@@ -64,7 +81,7 @@ String iconForSource(FinanceSource source) {
 
 class EarningsRow {
   final String ticker;
-  final String date;
+  final DateTime date;
   final String source;
   final double volatilityScore;
 
@@ -141,13 +158,11 @@ class _EarningsPageState extends State<EarningsPage> {
     List<EarningsRow> list = rows;
 
     list.sort((a, b) {
-      final da = DateTime.tryParse(a.date);
-      final db = DateTime.tryParse(b.date);
+      final da = a.date;
+      final db = b.date;
 
-      if (da != null && db != null) {
-        final cmp = da.compareTo(db);
-        if (cmp != 0) return cmp;
-      }
+      final cmp = da.compareTo(db);
+      if (cmp != 0) return cmp;
 
       return b.volatilityScore.compareTo(a.volatilityScore);
     });
@@ -157,7 +172,7 @@ class _EarningsPageState extends State<EarningsPage> {
     cachedPlutoRows = filtered.map((row) {
       return PlutoRow(
         cells: {
-          'date': PlutoCell(value: row.date),
+          'date': PlutoCell(value: row.date.toString().split(' ')[0]),
           'ticker': PlutoCell(value: row.ticker),
           'volatility': PlutoCell(value: row.volatilityScore),
           'source': PlutoCell(value: row.source),
@@ -227,10 +242,22 @@ class _EarningsPageState extends State<EarningsPage> {
 
   bool showNearTermOnly = false;
   bool showHighVolOnly = false;
+  final FlutterLocalNotificationsPlugin notifications =
+      FlutterLocalNotificationsPlugin();
+
+  void initNotifications() {
+    tz.initializeTimeZones();
+
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const settings = InitializationSettings(android: android);
+
+    notifications.initialize(settings);
+  }
 
   @override
   void initState() {
     super.initState();
+    initNotifications();
     _loadPreferredSource();
     _loadEarnings();
   }
@@ -240,7 +267,8 @@ class _EarningsPageState extends State<EarningsPage> {
     return data.map((row) {
       return EarningsRow(
         ticker: row["ticker"],
-        date: row["date"],
+        date: DateTime.parse(row["date"]),
+
         source: row["source"],
         volatilityScore: (row["volatility_score"] as num?)?.toDouble() ?? 0.0,
       );
@@ -372,6 +400,29 @@ class _EarningsPageState extends State<EarningsPage> {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  //-scheduler
+  Future<void> scheduleReminder(EarningsRow row) async {
+    final date = row.date; // Already a DateTime
+    final reminderTime = date.subtract(Duration(days: 1));
+
+    await notifications.zonedSchedule(
+      row.ticker.hashCode,
+      "${row.ticker} earnings tomorrow",
+      "Tap to view details",
+      tz.TZDateTime.from(reminderTime, tz.local),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'earnings_channel',
+          'Earnings Alerts',
+          importance: Importance.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
   // ------------------------------------------------------------
   // BOTTOM SHEET SELECTOR
   // ------------------------------------------------------------
@@ -431,10 +482,13 @@ class _EarningsPageState extends State<EarningsPage> {
 
   Map<String, List<EarningsRow>> groupByDate(List<EarningsRow> list) {
     final map = <String, List<EarningsRow>>{};
+
     for (final row in list) {
-      map.putIfAbsent(row.date, () => []);
-      map[row.date]!.add(row);
+      final key = row.date.toString().split(' ')[0];
+      map.putIfAbsent(key, () => []);
+      map[key]!.add(row);
     }
+
     return map;
   }
 
@@ -449,15 +503,23 @@ class _EarningsPageState extends State<EarningsPage> {
           Text(row.ticker, style: TextStyle(fontSize: 18)),
           SizedBox(width: 8),
           volatilityBadge(row.volatilityScore),
-          SizedBox(width: 8),
-          if (preferredSource != null)
-            Text(
-              iconForSource(preferredSource!),
-              style: TextStyle(fontSize: 16),
-            ),
         ],
       ),
-      subtitle: Text(row.date),
+      subtitle: Text(row.date.toString().split(' ')[0]),
+
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.event),
+            onPressed: () => saveToCalendar(row),
+          ),
+          IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: () => scheduleReminder(row),
+          ),
+        ],
+      ),
       onTap: () => openTickerSmart(row.ticker),
     );
   }
