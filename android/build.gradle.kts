@@ -12,12 +12,12 @@ subprojects {
 subprojects {
     plugins.withId("com.android.application") {
         configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
+            compileSdkVersion(35)
         }
     }
     plugins.withId("com.android.library") {
         configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
+            compileSdkVersion(35)
         }
     }
 
@@ -35,4 +35,8 @@ subprojects {
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
+}
+plugins {
+    id("com.android.application") version "8.11.1" apply false
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 }
